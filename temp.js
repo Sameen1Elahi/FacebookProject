@@ -1,97 +1,86 @@
-const connection = require('./connection')
 const express = require('express');
 const app = express();
+const connection = require('./connection')
 
 var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
-app.set('view engine','ejs');
 
-app.get('/',(req,res)=>{
-  res.sendFile(__dirname+'/register.html');
-});
 
-app.post('/',(req,res)=>{
-  const id = req.body.id;
+// sign up - add the user
+app.post('/User/signUp',(req,res)=>{
   const name = req.body.name;
+  const password = req.body.password;
   const email = req.body.email;
-  const mobileNo = req.body.mobileNo;
-
-
-  // Insert data into table 
   connection.connect((error)=>{
     if(error) throw error;
-    const sql ="INSERT INTO student(id,name,email,mobileNo) VALUES (?,?,?,?)";
-    connection.query(sql,[id,name,email,mobileNo],(error,result)=>{
+    const sql = 'INSERT INTO user(name,password,email) VALUES(?,?,?)';
+    connection.query(sql,[name,password,email],(error,result)=>{
       if(error) throw error;
-      // const name = "myname "+ name,
-      // const name = `my name is ${name}`;
-      //res.send("Student Register successful " + result.insertId);
-      res.redirect("/students");
+    res.send(result);
     })
   })
 })
 
-// display data 
-app.get('/students',(req,res)=>{
+// login - already have account
+app.post('/User/login',(req,res)=>{
+  const name = req.body.name;
+  const password = req.body.password;
   connection.connect((error)=>{
     if(error) throw error;
-    const sql = "SELECT * FROM student";
-    connection.query(sql,(error,result)=>{
-      if(error) throw error;
-
-      res.render(__dirname+"/students",{students:result});
+    const sql = 'SELECT * FROM user WHERE name = ? AND password = ?'
+    connection.query(sql, [name,password],(error,result)=>{
+      if (error) throw error;
+    res.send(result);
     })
   })
 })
 
-// Delete data from table
-app.get('/delete-student',(req,res)=>{
+// add new friend at the specific user id
+app.post('/user/:id/friend',(req,res)=>{
+  const {id: userId} = req.params;
+  //console.log(userId);
+  const friendUserId = req.body.friendUserId;
   connection.connect((error)=>{
     if(error) throw error;
-    const sql = "delete from student where id=?";
-    connection.query(sql,[req.query.id],(error,result)=>{
+    const sql ="INSERT INTO friend(user_id, friend_user_id) VALUES (?,?)";
+    connection.query(sql,[userId, friendUserId],(error,result)=>{
       if(error) throw error;
-      res.redirect('/students');
+    res.send(result);
     })
   })
 })
 
-//update student 
-app.get('/update-student',(req,res)=>{
+// search all friends from the specific user id
+app.get('/user/:id/allFriends',(req,res)=>{
+  const {id:userId} = req.params;
   connection.connect((error)=>{
     if(error) throw error;
-    const sql = "select * from student where id=?";
-    connection.query(sql,[req.query.id],(error,result)=>{
+    const sql = "SELECT * FROM friend LEFT JOIN user ON friend.friend_user_id = user.id WHERE friend.user_id = ?";
+    connection.query(sql,[userId],(error,result)=>{
       if(error) throw error;
-      res.render(__dirname+'/update-student', {student:result});
+    res.send(result);
     })
   })
 })
-app.post('/update-student',(req,res)=>{
-  let id = req.body.id;
-  let name = req.body.name;
-  let email = req.body.email;
-  let mobileNo = req.body.mobileNo;
-  connection.connect(async(error)=>{
+
+
+// delete friend from specific user
+app.put('/user/:id/deleteFriend',(req,res)=>{
+  const {id: userId} = req.params;
+  const friendUserId = req.body.friendUserId;
+  connection.connect((error)=>{
     if(error) throw error;
-    const sql = "update student set name=?, email=?, mobileNo=? where id=?";
-    try {
-       const res = await connection.query(sql,[name, email, mobileNo, id]);
-      // res
-       
-    } catch(err) {
-      throw err;
-    }
-    // connection.query(sql,[name, email, mobileNo, id],(error,result)=>{
-    //   if(error) throw error;
-    //   res.redirect('/students');
-    // })
+    const sql = "UPDATE friend SET deleted_at = NOW() WHERE user_id = ? AND friend_user_id = ?"
+    connection.query(sql,[userId, friendUserId],(error,result)=>{
+      if(error) throw error;
+    res.send(result);
+    })
   })
 })
 
 
 
 app.listen(3000,()=>{
-  console.log("Listen to port 3000");
+    console.log("Listen to port 3000");
 })

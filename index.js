@@ -6,30 +6,79 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 
-// search all friend 
-app.get('/listFriends',(req,res)=>{
-    connection.connect((error)=>{
-      if(error) throw error;
-      const sql = "SELECT * FROM friend";
-      connection.query(sql,(error,result)=>{
-        if(error) throw error;
-      })
-    })
-  })
 
-// Insert data: Add bew friend into table
-app.post('/addNewFriend',(req,res)=>{
-    const id = req.body.id;
-    const name = req.body.name;
-    connection.connect((error)=>{
+// sign up - add the user
+app.post('/User/signUp',(req,res)=>{
+  const name = req.body.name;
+  const password = req.body.password;
+  const email = req.body.email;
+  connection.connect((error)=>{
+    if(error) throw error;
+    const sql = 'INSERT INTO user(name,password,email) VALUES(?,?,?)';
+    connection.query(sql,[name,password,email],(error,result)=>{
       if(error) throw error;
-      const sql ="INSERT INTO friend(id,name) VALUES (?,?)";
-      connection.query(sql,[id,name],(error,result)=>{
-        if(error) throw error;
-      res.send(result);
-      })
+    res.send(result);
     })
   })
+})
+
+// login - already have account
+app.post('/User/login',(req,res)=>{
+  const name = req.body.name;
+  const password = req.body.password;
+  connection.connect((error)=>{
+    if(error) throw error;
+    const sql = 'SELECT * FROM user WHERE name = ? AND password = ?'
+    connection.query(sql, [name,password],(error,result)=>{
+      if (error) throw error;
+    res.send(result);
+    })
+  })
+})
+
+// add new friend at the specific user id
+app.post('/user/:id/friend',(req,res)=>{
+  const {id: userId} = req.params;
+  //console.log(userId);
+  const friendUserId = req.body.friendUserId;
+  connection.connect((error)=>{
+    if(error) throw error;
+    const sql ="INSERT INTO friend(user_id, friend_user_id) VALUES (?,?)";
+    connection.query(sql,[userId, friendUserId],(error,result)=>{
+      if(error) throw error;
+    res.send(result);
+    })
+  })
+})
+
+// search all friends from the specific user id
+app.get('/user/:id/allFriends',(req,res)=>{
+  const {id:userId} = req.params;
+  connection.connect((error)=>{
+    if(error) throw error;
+    const sql = "SELECT * FROM user JOIN friend ON friend.friend_user_id = user.id WHERE friend.user_id = ?";
+    connection.query(sql,[userId],(error,result)=>{
+      if(error) throw error;
+    res.send(result);
+    })
+  })
+})
+
+
+// delete friend from specific user
+app.put('/user/:id/deleteFriend',(req,res)=>{
+  const {id: userId} = req.params;
+  const friendUserId = req.body.friendUserId;
+  connection.connect((error)=>{
+    if(error) throw error;
+    const sql = "UPDATE friend SET deleted_at = NOW() WHERE user_id = ? AND friend_user_id = ?"
+    connection.query(sql,[userId, friendUserId],(error,result)=>{
+      if(error) throw error;
+    res.send(result);
+    })
+  })
+})
+
 
 
 app.listen(3000,()=>{
