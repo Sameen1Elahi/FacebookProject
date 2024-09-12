@@ -52,11 +52,11 @@ app.post('/user/:id/friend',(req,res)=>{
 })
 
 // search all friends from the specific user id
-app.get('/user/:id/allFriends',(req,res)=>{
+app.get('/user/:id/friends',(req,res)=>{
   const {id:userId} = req.params;
   connection.connect((error)=>{
     if(error) throw error;
-    const sql = "SELECT * FROM friend LEFT JOIN user ON friend.friend_user_id = user.id WHERE friend.user_id = ?";
+    const sql = "SELECT * FROM user u JOIN friend f ON f.friend_user_id = u.id WHERE f.user_id = ? AND f.deleted_at IS NULL";
     connection.query(sql,[userId],(error,result)=>{
       if(error) throw error;
     res.send(result);
@@ -66,7 +66,7 @@ app.get('/user/:id/allFriends',(req,res)=>{
 
 
 // delete friend from specific user
-app.put('/user/:id/deleteFriend',(req,res)=>{
+app.put('/user/:id/delete-friend',(req,res)=>{
   const {id: userId} = req.params;
   const friendUserId = req.body.friendUserId;
   connection.connect((error)=>{
@@ -77,6 +77,50 @@ app.put('/user/:id/deleteFriend',(req,res)=>{
     res.send(result);
     })
   })
+})
+
+// if logged in then post on fb
+app.post('/user/:id/post',(req,res)=>{
+  const {id:userId} = req.params;
+  const {image} = req.body;
+  connection.connect((error)=>{
+    if (error) throw error;
+    const sql1 = "SELECT * FROM user WHERE id = ?"
+    connection.query(sql1,[userId],(error,result)=>{
+      if (error){
+        res.send("Invalid user");
+      }
+      else if (result.length>0){
+        const sql = "INSERT INTO post(userId, image) VALUES (?,?)";
+        connection.query(sql,[userId,image],(error,result)=>{
+          if (error) throw error;
+        res.send(result);
+    })
+    }
+    })
+  })
+}) 
+
+// comment the post by anyother person
+app.post('/post/:id/user-id/like',(req,res)=>{
+  const {id: userId} = req.params;
+  const {person, image} = req.body;
+  connection.connect((error)=>{
+    if (error) throw error;
+    const sql1 = "SELECT * FROM user WHERE id = ?"
+    connection.query(sql1,[userId],(error,result)=>{
+      if (error){
+        res.send("Invalid user");
+      }
+      else if (result.length>0){
+    const sql = "UPDATE post SET comment = 'yes' WHERE userId = ? AND image = ?";
+    connection.query(sql, [person,image],(error,result)=>{
+      if (error) throw error;
+    res.send(result);
+    })
+  }
+  })
+})
 })
 
 
