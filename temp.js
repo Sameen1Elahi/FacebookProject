@@ -101,10 +101,10 @@ app.post('/user/:id/post',(req,res)=>{
   })
 }) 
 
-// comment the post by anyother person
+// like the post by anyother person
 app.post('/post/:id/user-id/like',(req,res)=>{
   const {id: userId} = req.params;
-  const {person, image} = req.body;
+  const {person} = req.body;
   connection.connect((error)=>{
     if (error) throw error;
     const sql1 = "SELECT * FROM user WHERE id = ?"
@@ -113,8 +113,31 @@ app.post('/post/:id/user-id/like',(req,res)=>{
         res.send("Invalid user");
       }
       else if (result.length>0){
-    const sql = "UPDATE post SET comment = 'yes' WHERE userId = ? AND image = ?";
-    connection.query(sql, [person,image],(error,result)=>{
+        const obj = {post_id: person, user_id: userId};
+        const sql = "INSERT INTO post_user_like SET ?";
+        connection.query(sql, obj,(error,result)=>{
+        if (error) throw error;
+      res.send(result);
+    })
+  }
+  })
+})
+})
+
+// comment the post by anyother person
+app.post('/post/:id/user-id/comment',(req,res)=>{
+  const {id: userId} = req.params;
+  const {person,comment} = req.body;
+  connection.connect((error)=>{
+    if (error) throw error;
+    const sql1 = "SELECT * FROM user WHERE id = ?"
+    connection.query(sql1,[userId],(error,result)=>{
+      if (error){
+        res.send("Invalid user");
+      }
+      else if (result.length>0){
+    const sql = "INSERT INTO post_user_comment(post_id, user_id, comments) VALUES (?,?,?)";
+    connection.query(sql, [person, userId, comment],(error,result)=>{
       if (error) throw error;
     res.send(result);
     })

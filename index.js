@@ -15,6 +15,7 @@ app.post('/user',(req,res)=>{
     if(error) throw error;
     const sql = 'INSERT INTO user SET ?';
     const sqlObject = {name, password, email};
+    console.log(sqlObject);
     connection.query(sql,sqlObject,(error,result)=>{
       if(error) throw error;
     res.send(result);
@@ -45,8 +46,8 @@ app.post('/user/:id/friend',(req,res)=>{
   connection.connect((error)=>{
     if(error) throw error;
     const sql ="INSERT INTO friend SET ?";
-    const sqlObject = [userId, friendUserId];
-    connection.query(sql, [userId, friendUserId] ,(error,result)=>{
+    const sqlObject = {user_id:userId, friend_user_id :friendUserId};
+    connection.query(sql, sqlObject,(error,result)=>{
       if(error) throw error;
     res.send(result);
     })
