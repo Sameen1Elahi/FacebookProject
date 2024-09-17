@@ -1,32 +1,41 @@
-// Import the mysql2 library
-const mysql = require('mysql2/promise');
-// Async function to handle the database query
-async function getData() {
- let connection;
- try {
-   // Create a connection
-   connection = await mysql.createConnection({
-     host: 'localhost',
-     user: 'root',
-     password: 'password',
-     database: 'your_database'
-   });
-   // Execute a query
-   const [rows, fields] = await connection.execute('SELECT * FROM user');
-   // Return or process rows
-   return rows;
- } catch (error) {
-   console.error('Error executing query:', error);
- } finally {
-   // Ensure connection is closed
-   if (connection) {
-     await connection.end();
-   }
- }
+
+//const connection = require('./connection.js');
+
+// add new user in database - sign up 
+module.exports = async function insertUser(res, payload) {
+  const {name, password, email} = payload;
+  let connection = res.connection2;
+  try {
+    const sqlObject = { name: name, password: password, email: email };
+    const columns = Object.keys(sqlObject).join(', '); // 'name, price, quantity, category'
+    const placeholders = Object.keys(sqlObject).map(() => '?').join(', '); // '?, ?, ?, ?'
+    const values = Object.values(sqlObject); // [ 'Laptop', 999.99, 5, 'Electronics' ]
+    
+    const sql = `INSERT INTO user (${columns}) values (${placeholders})`;
+    const [result] = await (await connection).execute(sql, values);
+    return result;
+  } 
+  catch (error) {
+    console.error('Error executing query:', error);
+    throw error; 
+  } 
 }
-// Usage of the async function
-getData().then((data) => {
- console.log(data);
-}).catch((err) => {
- console.error(err);
-});
+
+// login the user
+module.exports = async function loginUser(res, payload) {
+  let connection = res.connection2;
+  const {name,password} = payload;
+  try {
+    const sql = 'SELECT * FROM user WHERE name = ? AND password = ?';
+    const [result] = await (await connection).execute(sql, [name, password]);
+    return result;
+  } 
+  catch (error) {
+    console.error('Error executing query:', error);
+    throw error; 
+  } 
+}
+
+
+
+
