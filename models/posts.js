@@ -1,83 +1,81 @@
-const mysql = require('mysql2/promise');
+//const connection = require('./connection.js');
 
-// Async function to handle the database insertion
-async function postOnFb(userId,image) {
-  let connection;
+
+async function postOnFb(res,payload) {
+  let connection = res.connection2;
+  const {userId,image} = payload;
   try {
-    // Create a connection
-    connection = await mysql.createConnection({
-      host: 'localhost',
-      user: 'root',
-      password: 'uthe@rakh1Q',
-      database: 'facebook',
-      namedPlaceholders: true
-    });
-    
-    // Prepare the SQL query and data
     const sql1 = "SELECT * FROM user WHERE id = ?"
-    const [rows, fields] = await connection.execute(sql1,[userId]);
-    console.log(rows);
-      if (rows.length>0){
-        const sql = "INSERT INTO post(userId, image) VALUES (?,?)"
-        const [result] = await connection.execute(sql, [userId,image]);
-        return result;
-      }
+    const [rows, fields] = await (await connection).execute(sql1,[userId]);
+    //console.log(rows);
+    if(rows.length>0){
+      const sqlObject = {userId:userId, image:image};
+      const columns = Object.keys(sqlObject).join(', '); // 'name, price, quantity, category'
+      const placeholders = Object.keys(sqlObject).map(() => '?').join(', '); // '?, ?, ?, ?'
+      const values = Object.values(sqlObject); // [ 'Laptop', 999.99, 5, 'Electronics' ]
     
-    // Return the result
-    //return result;
-  } catch (error) {
+      const sql = `INSERT INTO post (${columns}) VALUES (${placeholders})`;
+      const [result] = await (await connection).execute(sql, values);
+      return result;
+    }
+  } 
+  catch (error) {
     console.error('Error executing query:', error);
     throw error; // Re-throw the error to handle it in the route handler
-  } finally {
-    // Ensure the connection is closed
-    if (connection) {
-      await connection.end();
-    }
-  }
+  } 
 }
 
 
-async function postUserLike(userId,person) {
-    let connection;
-    try {
-      // Create a connection
-      connection = await mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'uthe@rakh1Q',
-        database: 'facebook',
-        namedPlaceholders: true
-      });
-      
-      // Prepare the SQL query and data
-      const sql1 = "SELECT * FROM user WHERE id = ?"
-      const [rows, fields] = await connection.execute(sql1,[userId]);
-      console.log(rows);
-        if (rows.length>0){
-          const sql = "INSERT INTO post_user_like SET post_id=:person, user_id=:userId";
-          console.log('after sql');
-          const obj = {post_id: person, user_id: userId};
-          const [result] = await connection.execute(sql, obj);
-          console.log('after sql execution');
-          return result;
-        }
-      
-      // Return the result
-      //return result;
-    } catch (error) {
-      console.error('Error executing query:', error);
-      throw error; // Re-throw the error to handle it in the route handler
-    } finally {
-      // Ensure the connection is closed
-      if (connection) {
-        await connection.end();
-      }
+async function postUserLike(res,payload) {
+  let connection = res.connection2;
+  const {userId,person} = payload;
+  try {
+    const sql1 = "SELECT * FROM user WHERE id = ?"
+    const [rows, fields] = await (await connection).execute(sql1,[userId]);
+    //console.log(rows);
+    if(rows.length>0){
+      const sqlObject = {user_id:userId, post_id:person};
+      const columns = Object.keys(sqlObject).join(', '); 
+      const placeholders = Object.keys(sqlObject).map(() => '?').join(', '); 
+      const values = Object.values(sqlObject); 
+      const sql = `INSERT INTO post_user_like (${columns}) VALUES (${placeholders})`;
+      const [result] = await (await connection).execute(sql, values);
+      return result;
     }
-  }
+  } 
+  catch (error) {
+    console.error('Error executing query:', error);
+    throw error; // Re-throw the error to handle it in the route handler
+  } 
+}
+
+
+
+async function postUserComment(res,payload) {
+  let connection = res.connection2;
+  const {userId,person,comment} = payload;
+  try {
+    const sql1 = "SELECT * FROM user WHERE id = ?"
+    const [rows, fields] = await (await connection).execute(sql1,[userId]);
+    //console.log(rows);
+    if(rows.length>0){
+      const sqlObject = {user_id:userId, post_id:person,comments:comment};
+      const columns = Object.keys(sqlObject).join(', '); 
+      const placeholders = Object.keys(sqlObject).map(() => '?').join(', '); 
+      const values = Object.values(sqlObject); 
+      const sql = `INSERT INTO post_user_comment (${columns}) VALUES (${placeholders})`;
+      const [result] = await (await connection).execute(sql, values);
+      return result;
+    }
+  } 
+  catch (error) {
+    console.error('Error executing query:', error);
+    throw error; // Re-throw the error to handle it in the route handler
+  } 
+}
+
+
+  module.exports =  {postOnFb, postUserLike, postUserComment};
   
-
-
-  module.exports.postUserLike = postUserLike;
-  module.exports.postOnFb = postOnFb;
 
 

@@ -2,7 +2,8 @@
 //const connection = require('./connection.js');
 
 // add new user in database - sign up 
-module.exports = async function insertUser(res, payload) {
+async function insertUser(res, payload) {
+ 
   const {name, password, email} = payload;
   let connection = res.connection2;
   try {
@@ -22,7 +23,7 @@ module.exports = async function insertUser(res, payload) {
 }
 
 // login the user
-module.exports = async function loginUser(res, payload) {
+async function loginUser(res, payload) {
   let connection = res.connection2;
   const {name,password} = payload;
   try {
@@ -35,6 +36,9 @@ module.exports = async function loginUser(res, payload) {
     throw error; 
   } 
 }
+
+
+module.exports = { insertUser, loginUser };
 
 
 
